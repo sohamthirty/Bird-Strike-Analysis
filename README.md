@@ -29,24 +29,5 @@ The dataset provides comprehensive information about bird strikes on aircraft, o
 - • Create a stored procedure in MySQL to add new bird strike incident to database, accounting for potential addition of a new airport
 - • Test the stored procedure in R to ensure it successfully adds a new incident
 
-**E. Relational Schema Design:**
-- • Create a normalized relational schema for the Articles, Journals, and Authors entities
-- • Define appropriate attributes for each entity, including primary and foreign keys
-- • Include an ERD image in the R Notebook to visualize the model
-
-**F. Database Realization and Data Extraction:**
-- • Realize the relational schema in SQLite by executing CREATE TABLE statements in the R Notebook
-- • Extract and transform data from the XML document and load it into the appropriate tables in the SQLite database
-- • Handle conversions and clean data as necessary, documenting decisions made
-
-**G. Star/Snowflake Schema Creation:**
-- • Create a MySQL database and establish a connection.
-- • Create and populate a star schema for author facts based on the SQLite Database from Part 1
-- • Include relevant information in the fact table, such as author ID, name, number of articles, and average articles per year
-
-**H. Exploration and Mining:**
-- • Write SQL queries using the MySQL data warehouse to populate a fictitious dashboard for analyzing publication patterns
-- • Focus on the top authors panel and write a query to find the top ten authors based on the number of publications
-
 ## Conclusion
 In this project, we successfully designed and created a database schema for bird strike incidents, airports, and conditions, ensuring data integrity and relationships. By loading and validating data from the Bird Strikes CSV file, we populated the tables with relevant information, addressing missing values appropriately. Utilizing SQL queries, we analyzed bird strike incidents by flight phase, identified phases with above-average incidents, and calculated average incidents per month. Additionally, we visualized the data through a column chart, providing valuable insights. Lastly, the implementation of a stored procedure allowed us to add new incidents to the database, while adhering to the normalization principles. Overall, these tasks enabled us to explore and mine the data effectively, contributing to the understanding of bird strike incidents and their patterns.
