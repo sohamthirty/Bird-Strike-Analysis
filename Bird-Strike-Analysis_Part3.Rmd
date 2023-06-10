@@ -1,18 +1,16 @@
 ---
-Title: Practicum-2 Notebook-2
+Title: Notebook-3
 output:
   html_document:
     df_print: paged
 ---
 **Author(s) :** 
 
-**Soham Shinde (shinde.so@northeastern.edu)**
-
-**Shuchita Mishra (mishra.shu@northeastern.edu)**
+**Soham Shinde (sohamthirty1999@gmail.com)**
 
 # PRATICUM II 
 
-In this practicum you will extract data from an XML document and then store the data relationally in a SQLite database. That database represents a "transactional" database. Then you will extract data from the transactional database and create an "analytical" database using a star schema in MySQL. Finally, you will query facts from the MySQL analytical database. This will require that you connect to two different databases simultaneously -- a common occurrence in practice.
+Here we will extract data from an XML document and then store the data relationally in a SQLite database. That database represents a "transactional" database. Then you will extract data from the transactional database and create an "analytical" database using a star schema in MySQL. Finally, you will query facts from the MySQL analytical database. This will require that you connect to two different databases simultaneously -- a common occurrence in practice.
 
 
 ## Part 2 (40 pts) Create Star/Snowflake Schema
