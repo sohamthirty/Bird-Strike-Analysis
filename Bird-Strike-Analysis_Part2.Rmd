@@ -6,13 +6,11 @@ output:
 ---
 **Author(s) :** 
 
-**Soham Shinde (shinde.so@northeastern.edu)**
-
-**Shuchita Mishra (mishra.shu@northeastern.edu)**
+**Soham Shinde (sohamthirty1999@gmail.com)**
 
 # PRATICUM II 
 
-In this practicum you will extract data from an XML document and then store the data relationally in a SQLite database. That database represents a "transactional" database. Then you will extract data from the transactional database and create an "analytical" database using a star schema in MySQL. Finally, you will query facts from the MySQL analytical database. This will require that you connect to two different databases simultaneously -- a common occurrence in practice.
+Here we will extract data from an XML document and then store the data relationally in a SQLite database. That database represents a "transactional" database. Then you will extract data from the transactional database and create an "analytical" database using a star schema in MySQL. Finally, you will query facts from the MySQL analytical database. This will require that you connect to two different databases simultaneously -- a common occurrence in practice.
 
 Before you begin, download the PubMed catalog, save the XML file locally in the same folder as your R Notebook, and then inspect the file to familiarize yourself with its content and structure. 
 
