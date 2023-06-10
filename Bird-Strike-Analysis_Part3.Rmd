@@ -1,0 +1,251 @@
+---
+Title: Practicum-2 Notebook-2
+output:
+  html_document:
+    df_print: paged
+---
+**Author(s) :** 
+
+**Soham Shinde (shinde.so@northeastern.edu)**
+
+**Shuchita Mishra (mishra.shu@northeastern.edu)**
+
+# PRATICUM II 
+
+In this practicum you will extract data from an XML document and then store the data relationally in a SQLite database. That database represents a "transactional" database. Then you will extract data from the transactional database and create an "analytical" database using a star schema in MySQL. Finally, you will query facts from the MySQL analytical database. This will require that you connect to two different databases simultaneously -- a common occurrence in practice.
+
+
+## Part 2 (40 pts) Create Star/Snowflake Schema
+
+### 1. (0 pts / 0.1 hrs) 
+Create a new R Notebook for Part 2.
+
+
+### 2. (10 pts / 1 hr) 
+Create a MySQL database using either a local or a cloud MySQL instance. 
+
+Connect to the database.
+
+**A. Connect to local instance of MySQL from R**
+
+```{r setup, warning=FALSE}
+#importing all required libraries
+library(RMySQL) 
+
+#Set up and connect to MySQL database
+db_user     <- 'root'
+db_password <- 'password'
+db_name     <- 'myp3'
+db_host     <- 'localhost'
+db_port     <- 3306
+
+#Create a new database and connect to it from R
+mydb <-  dbConnect(RMySQL::MySQL(), 
+                   user = db_user, password = db_password, dbname = db_name, 
+                   host = db_host, port = db_port)
+```
+
+
+### 3. (30 pts / 4 hrs) 
+Create and populate a star schema for author facts. 
+
+Each row in this fact table will represent one author fact. 
+
+It must include the authors id, author name, number of articles by that author, average number of articles published per year. 
+
+Load the data from the SQLite Database created in Part 1 and populate the fact table through R. 
+
+Note that there is not a single way to create the fact table -- you may use dimension tables or you may collapse the dimensions into the fact table. 
+Remember that the goal of fact tables is to make interactive analytical queries fast through pre-computation and storage -- more storage but better performance. 
+This requires thinking and creativity -- there is not a single best solution.
+
+```{r}
+library(RSQLite)
+
+dbfile = "p2DB.sqlite"
+dbcon <- dbConnect(RSQLite::SQLite(), dbfile)
+```
+
+```{r}
+res1 <- dbSendQuery(dbcon,"SELECT * FROM Articles")
+res1 <- dbFetch(res1)
+res2 <- dbSendQuery(dbcon,"SELECT * FROM Authors")
+res2 <- dbFetch(res2)
+
+print(res1)
+print(res2)
+```
+
+**Setting the Foreign key checks**
+
+```{sql connection=mydb}
+SET FOREIGN_KEY_CHECKS=0; 
+```
+
+```{sql connection=mydb}
+DROP TABLE IF EXISTS Authors_Dim
+```
+
+```{sql connection=mydb}
+DROP TABLE IF EXISTS Articles_Dim
+```
+
+```{sql connection=mydb}
+DROP TABLE IF EXISTS Authors_Fact
+```
+
+Setting the FK keys check ON
+```{sql connection=mydb}
+SET FOREIGN_KEY_CHECKS = 1;
+```
+
+**created tables in mysql**
+
+```{sql connection=mydb}
+CREATE TABLE Articles_Dim(
+  ArticleID INTEGER PRIMARY KEY NOT NULL,
+  Title TEXT NOT NULL,
+  ArticleDate DATE NOT NULL,
+  ISSN TEXT NOT NULL);
+```
+
+```{sql connection=mydb}
+CREATE TABLE Authors_Dim(
+  AuthorID INTEGER PRIMARY KEY NOT NULL,
+  LastName TEXT NOT NULL,
+  ForeName TEXT NOT NULL,
+  Initials TEXT NOT NULL,
+  Affiliation TEXT);
+```
+
+### Checking
+```{sql connection=mydb}
+SELECT *
+FROM articles_dim
+```
+
+**Populate the tables**
+
+```{r}
+dbSendQuery(mydb, "SET GLOBAL local_infile = true;")
+
+dbWriteTable(mydb, "articles_dim", res1, append = T,row.names=FALSE)
+dbWriteTable(mydb, "authors_dim", res2, append = T,row.names=FALSE)
+
+#table names should not be written in capitals 
+#Reference : https://github.com/r-dbi/RMySQL/issues/82
+```
+
+```{sql connection=dbcon}
+SELECT (1 + CAST (SUBSTRING(ArticleDate, 1,4) as INT) -
+(SELECT CAST (SUBSTRING(ArticleDate, 1,4) as INT) 
+FROM Articles
+ORDER BY ArticleDate 
+LIMIT 1)
+) As range
+FROM Articles
+ORDER BY ArticleDate DESC
+LIMIT 1 
+```
+
+**Checking**
+
+```{sql connection=dbcon}
+SELECT  Authorship.AuthorID, Authors.LastName || ' ' || Authors.ForeName as Name, COUNT(Authorship.ArticleID) as noa, ROUND(CAST (COUNT(Authorship.ArticleID) as FLOAT)/
+CAST ((SELECT (1 + CAST (SUBSTRING(ArticleDate, 1,4) as INT) -
+(SELECT CAST (SUBSTRING(ArticleDate, 1,4) as INT) 
+FROM Articles
+ORDER BY ArticleDate 
+LIMIT 1)
+)
+FROM Articles
+ORDER BY ArticleDate DESC
+LIMIT 1 ) as FLOAT),3) as AvgArcPerYr
+
+FROM Authorship
+JOIN Articles ON Articles.ArticleID = Authorship.ArticleID
+JOIN Authors ON Authors.AuthorID = Authorship.AuthorID
+GROUP BY Authors.AuthorID
+```
+
+```{r}
+qu <- "SELECT  Authorship.AuthorID, Authors.LastName || ' ' || Authors.ForeName as Name, COUNT(Authorship.ArticleID) as noa, ROUND(CAST (COUNT(Authorship.ArticleID) as FLOAT)/
+CAST ((SELECT (1 + CAST (SUBSTRING(ArticleDate, 1,4) as INT) -
+(SELECT CAST (SUBSTRING(ArticleDate, 1,4) as INT) 
+FROM Articles
+ORDER BY ArticleDate 
+LIMIT 1)
+)
+FROM Articles
+ORDER BY ArticleDate DESC
+LIMIT 1 ) as FLOAT),3) as AvgArcPerYr
+
+FROM Authorship
+JOIN Articles ON Articles.ArticleID = Authorship.ArticleID
+JOIN Authors ON Authors.AuthorID = Authorship.AuthorID
+GROUP BY Authors.AuthorID"
+
+res3 <- dbSendQuery(dbcon,qu)
+res3 <- dbFetch(res3)
+
+res3
+```
+
+```{sql connection=mydb}
+CREATE TABLE authors_fact(
+  AuthorID INTEGER PRIMARY KEY NOT NULL,
+  Name TEXT NOT NULL,
+  noa INTEGER NOT NULL,
+  AvgArcPerYr INTEGER NOT NULL);
+```
+
+```{r}
+dbSendQuery(mydb, "SET GLOBAL local_infile = true;")
+
+dbWriteTable(mydb, "authors_fact", res3, overwrite = T, row.names=F)
+```
+
+```{sql connection=mydb}
+SELECT *
+FROM Authors_Fact
+```
+
+## Part 3 (20 pts) Explore and Mine Data
+
+### 1. (20 pts / 4 hrs) 
+Write queries using your MySQL data warehouse to populate a fictitious dashboard that would allow an analyst to explore whether the number of publications show a seasonal pattern. 
+
+### PUBKISCATIONS === ARTICLES????//
+
+List the top ten authors in terms of numbers of publications. 
+
+If you need to update the fact table, document your changes and your reasons why the changes are needed. 
+
+This requires thinking and creativity -- there is not a single best solution.
+
+```{r}
+qu4 <- 
+"
+SELECT *
+FROM Authors_Fact
+ORDER By noa DESC
+LIMIT 10
+"
+
+res4 <- dbSendQuery(mydb,qu4)
+res4 <- dbFetch(res4)
+
+res4
+```
+
+### Plotting the top ten authors based on number of publications
+```{r}
+library(ggplot2)
+
+ggplot(data = res4) +
+geom_bar(aes(x = reorder(as.factor(Name), -noa) , y = noa, fill = Name), stat = "identity") +
+labs(x = "Author", y = "No. of Publications", title = "Top ten authors")+
+theme(axis.text.x = element_text(angle = 45))
+```
+
+
